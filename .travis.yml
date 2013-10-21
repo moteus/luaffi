@@ -42,7 +42,8 @@ install:
   - sudo luarocks install lake-scm-0.rockspec
 
 script: 
-  - lake clean test
+  - make test
+  # - lake clean test
 
 notifications:
   email:

@@ -4,7 +4,7 @@ local MINGW = WINDOWS and not MSVC
 
 local DEFINES = L{
   IF(MSVC, "_CRT_SECURE_NO_DEPRECATE"),
-  IF(MINGW, "_WIN32_WINNT=0x0501")
+  IF(MINGW, "_WIN32_WINNT=0x0501"),
 }
 
 local CFLAGS  = L{
