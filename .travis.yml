@@ -39,7 +39,7 @@ before_install:
   - cd $TRAVIS_BUILD_DIR
 
 install:
-  - sudo luarocks install lake
+  - sudo luarocks install lake-scm-0.rockspec
 
 script: 
   - lake clean test
