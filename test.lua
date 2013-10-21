@@ -8,8 +8,16 @@ local dlls = {}
 dlls.__cdecl = ffi.load('test_cdecl')
 
 if ffi.arch == 'x86' and ffi.os == 'Windows' then
-    dlls.__stdcall = ffi.load('test_stdcall')
-    dlls.__fastcall = ffi.load('test_fastcall')
+    local function opt_load(name)
+        local ok, lib = pcall(ffi.load, name)
+        if not ok then
+            print("WARNING! can not load `" .. name .. "`")
+            return
+        end
+        return lib
+    end
+    dlls.__stdcall = opt_load('test_stdcall')
+    dlls.__fastcall = opt_load('test_fastcall')
 end
 
 local function check(a, b)

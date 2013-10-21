@@ -1,0 +1,92 @@
+local INCDIR  = IF(MSVC, "msvc")
+
+local MINGW = WINDOWS and not MSVC
+
+local DEFINES = L{
+  IF(MSVC, "_CRT_SECURE_NO_DEPRECATE"),
+  IF(MINGW, "_WIN32_WINNT=0x0501")
+}
+
+local CFLAGS  = L{
+  IF(not WINDOWS, "-fPIC");
+  IF(not MSVC,{
+    "-g",
+    "-fvisibility=hidden",
+    "-Wall",
+    "-Werror",
+    "-Wno-unused-function",
+    "--std=gnu99",
+  });
+}
+
+local DYNAMIC = false
+
+dasc_h = dasc_target{
+  call_x86    = {"call_x86", "-LNE -D X32WIN"        };
+  call_x64    = {"call_x86", "-LNE -D X64"           };
+  call_x64win = {"call_x86", "-LNE -D X64 -D X64WIN" };
+  call_arm    = {"call_arm", "-LNE"                  };
+}
+
+ffi = c.shared{"ffi",
+  src          = {"call", "ctype", "ffi", "parser"};
+  needs        = {"lua"};
+  defines      = L{"LUA_FFI_BUILD_AS_DLL", DEFINES};
+  cflags       = CFLAGS;
+  incdir       = INCDIR;
+  dynamic      = DYNAMIC;
+  compile_deps = dasc_h;
+  libflags     = IF(MSVC and not DYNAMIC, {"/EXPORT:sprintf", "/EXPORT:strncmp"});
+}
+
+target("build", ffi)
+
+if MSVC then
+
+  test_cdecl    = c.shared{"test_cdecl",
+    src     = copy("test_cdecl.c", "test.c");
+    cflags  = L{CFLAGS, "/Gd"};
+    defines = DEFINES;
+    incdir  = INCDIR;
+    dynamic = DYNAMIC;
+  }
+
+  test_stdcall  = c.shared{"test_stdcall",
+    src     = copy("test_stdcall.c", "test.c");
+    cflags  = L{CFLAGS, "/Gz"};
+    defines = DEFINES;
+    incdir  = INCDIR;
+    dynamic = DYNAMIC;
+  }
+
+  test_fastcall = c.shared{"test_fastcall",
+    src     = copy("test_fastcall.c", "test.c");
+    cflags  = L{CFLAGS, "/Gr"};
+    defines = DEFINES;
+    incdir  = INCDIR;
+    dynamic = DYNAMIC;
+  }
+
+  test_deps = {test_cdecl, test_stdcall, test_fastcall}
+
+else
+
+  test_cdecl  = c.shared{"test_cdecl",
+    src     = "test";
+    cflags  = CFLAGS;
+    defines = DEFINES;
+    incdir  = INCDIR;
+    dynamic = DYNAMIC;
+  }
+
+  test_deps = {test_cdecl}
+
+end
+
+table.insert(test_deps, 1, ffi)
+
+target("test", test_deps, function()
+  run_test(LUA_EXE, "test.lua")
+end)
+
+default(ffi)
